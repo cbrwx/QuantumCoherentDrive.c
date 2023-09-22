@@ -144,11 +144,51 @@ def plot_simulation_results(results):
     plt.tight_layout()
     plt.show()
 
-# Initialize the Quantum Coherence Drive with an energy storage capacity of 10 units
-qcd = QuantumCoherenceDrive(n=10, omega=2.0 * np.pi, energy_storage_capacity=10)
+def find_optimal_restoration_energy():
+    energies = np.linspace(0.01, 2.0, 20)  # Searching between 0.01 and 2 with 20 steps
+    average_storages = []
+    coherence_restored_counts = []
 
-# Simulate the QCD for 10 steps
-simulation_results = qcd.simulate_drive(steps=10)
+    for energy in energies:
+        qcd = QuantumCoherenceDrive(n=10, omega=2.0 * np.pi, energy_storage_capacity=10)
+        results = qcd.simulate_drive(steps=100, restoration_energy=energy)
+        avg_storage = np.mean([r['Energy Storage'] for r in results])
+        coherence_restored_count = sum([1 for r in results if r['Restored Coherence']])
+        
+        average_storages.append(avg_storage)
+        coherence_restored_counts.append(coherence_restored_count)
+        
+        print(f"Restoration Energy: {energy:.2f} | Average Storage: {avg_storage:.2f} | Coherence Restored: {coherence_restored_count} times")
+
+    # Plotting
+    plt.figure(figsize=(12, 6))
+    plt.subplot(1, 2, 1)
+    plt.plot(energies, average_storages, marker='o')
+    plt.xlabel("Restoration Energy")
+    plt.ylabel("Average Energy Storage")
+    plt.title("Average Energy Storage vs Restoration Energy")
+
+    plt.subplot(1, 2, 2)
+    plt.plot(energies, coherence_restored_counts, marker='o', color='r')
+    plt.xlabel("Restoration Energy")
+    plt.ylabel("Times Coherence Restored")
+    plt.title("Coherence Restored vs Restoration Energy")
+
+    plt.tight_layout()
+    plt.show()
+
+    # Return the optimal restoration energy for further use
+    optimal_energy = energies[np.argmax(average_storages)]
+    return optimal_energy
+
+# Find the optimal restoration energy
+optimal_energy = find_optimal_restoration_energy()
+print(f"\nOptimal Restoration Energy Found: {optimal_energy:.2f}\n")
+print('-' * 80)
+
+# Simulation with the optimal restoration energy
+qcd = QuantumCoherenceDrive(n=10, omega=2.0 * np.pi, energy_storage_capacity=10)
+simulation_results = qcd.simulate_drive(steps=10, restoration_energy=optimal_energy)
 
 # Plot the results
 plot_simulation_results(simulation_results)
